@@ -1,0 +1,4 @@
+to build on linux for windows, install sudo apt install mingw-w64
+then 
+make OS=windows
+for linux, just make
