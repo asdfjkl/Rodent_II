@@ -478,6 +478,12 @@ void ReadPersonality(char *fileName)
   char line[256];
   int lineNo = 0;
   char token[180], *ptr;
+  
+  // PATCH: always revert to "manual" control
+  // via UCI options; disables all personality file mechanisms 
+  panel_style = 2;
+  fl_separate_books = 1;
+  fl_elo_slider = 1;  
 
   // exit if this personality file doesn't exist
   if ((personalityFile = fopen(fileName, "r")) == NULL)
@@ -490,6 +496,7 @@ void ReadPersonality(char *fileName)
   while (fgets(line, 256, personalityFile)) {
     ptr = ParseToken(line, token);
 
+    /*
     if (strstr(line, "HIDE_OPTIONS")) panel_style = 0;
     if (strstr(line, "SHOW_OPTIONS")) panel_style = 1;
     if (strstr(line, "FULL_OPTIONS")) panel_style = 2;
@@ -499,6 +506,7 @@ void ReadPersonality(char *fileName)
 
     if (strstr(line, "ELO_SLIDER")) fl_elo_slider = 1;
     if (strstr(line, "NPS_BLUR")) fl_elo_slider = 0;
+    */
 
     if (strcmp(token, "setoption") == 0)
       ParseSetoption(ptr);

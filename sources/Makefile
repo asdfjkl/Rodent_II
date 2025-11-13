@@ -1,51 +1,48 @@
-#makefile to compile Rodent II on Linux
+# Makefile for Rodent II (Linux + Windows cross compile)
 
-#define the directory for the executable file
-BINDIR = /usr/bin
+# === Settings ===
 
-#define the directory for the data files
-DATADIR = /usr/share/rodentII
+BINDIR = .
+DATADIR_LINUX = /usr/share/rodentII
+DATADIR_WIN = .
 
-
-# define the C compiler to use
-CC = g++
-
-# define the compile-time flags
-CFLAGS = -g -w -Wfatal-errors -pipe -DNDEBUG -O3 -fno-rtti -finline-functions -fprefetch-loop-arrays -DBOOKPATH=$(DATADIR)
-C1FLAGS = -g -w -Wfatal-errors -pipe -DWRITEDEBUGFILE -DBOOKPATH=$(DATADIR)
-
-# define the link options
-LDFLAGS = -s -lm
-LD1FLAGS = -lm
-
-# define outpout name and settings file
-EXENAME= rodentII
+EXENAME_LINUX = rodentII
+EXENAME_WIN = rodentII.exe
 CONFIGFILE = basic.ini
 
-.PHONY: clean install update remove help
+# === Compiler selection ===
+# Default: native build
+OS ?= linux
 
-default: build
+ifeq ($(OS),windows)
+	CC = x86_64-w64-mingw32-g++
+	EXENAME = $(EXENAME_WIN)
+	DATADIR = $(DATADIR_WIN)
+	LDFLAGS = -static -static-libgcc -static-libstdc++
+	CFLAGS = -O3 -DNDEBUG -DBOOKPATH=\"$(DATADIR)\"
+else
+	CC = g++
+	EXENAME = $(EXENAME_LINUX)
+	DATADIR = $(DATADIR_LINUX)
+	CFLAGS = -g -w -Wfatal-errors -pipe -DNDEBUG -O3 -fno-rtti -finline-functions -fprefetch-loop-arrays -DBOOKPATH=\"$(DATADIR)\"
+	LDFLAGS = -s -lm
+endif
+
+.PHONY: all build build-static build-debug clean install help
+
+# === Default ===
+all: build
 
 build:
-	@echo "Type make help for additional options"
-	$(CC) $(LDFLAGS) $(CFLAGS) -o $(EXENAME) -x c++ compile.linux
+	@echo "Building Rodent II for $(OS)..."
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(EXENAME) -x c++ compile.linux
 	echo -e "SHOW_OPTIONS\nPERSONALITY_BOOKS\nNPS_BLUR" > $(CONFIGFILE)
 
 build-static:
-	@echo "Type make help for additional options"
-	$(CC) $(LDFLAGS) -static $(CFLAGS) -o $(EXENAME) -x c++ compile.linux
-	echo -e "SHOW_OPTIONS\nPERSONALITY_BOOKS\nNPS_BLUR" > $(CONFIGFILE)
+	$(MAKE) build LDFLAGS="$(LDFLAGS) -static"
 
 build-debug:
-	@echo "Type make help for additional options"
-	$(CC) $(LD1FLAGS) $(C1FLAGS) -o $(EXENAME) -x c++ compile.linux
-	echo -e "SHOW_OPTIONS\nPERSONALITY_BOOKS\nNPS_BLUR" > $(CONFIGFILE)
-
-%.o : %.c
-	$(CC) $(CFLAGS) $< -o $@
-
-%.o : %.cpp
-	$(CC) $(CFLAGS) $< -o $@
+	$(MAKE) build CFLAGS="$(CFLAGS) -DWRITEDEBUGFILE"
 
 clean:
 	rm -f $(EXENAME)
@@ -62,22 +59,11 @@ install:
 	chmod -R 644 $(DATADIR)/*
 	find $(DATADIR) -type d -exec chmod 755 '{}' \;
 
-# this just performs a copy of rodentII engine
-update:
-	cp $(EXENAME) $(BINDIR)
-	
-remove:
-	rm -f $(BINDIR)/$(EXENAME)
-	rm -rf $(DATADIR)
-	
 help:
 	@echo ""
-	@echo "To compile RodentII type:"
-	@echo ""
-	@echo "make build		> Compile Rodent II"
-	@echo "make build-static	> Compile Rodent II as a static binary"
-	@echo "make build-debug 	> Compile Rodent II with Logfile support"
-	@echo "make clean 		> Clean up"
-	@echo "make install		> Install Rodent II (root privileges required)"
-	@echo "make update		> Update Rodent II engine (root privileges required)"
-	@echo "make remove		> Remove Rodent II from your system (root privileges required)"
+	@echo "Build targets:"
+	@echo "  make build            - Build for Linux (default)"
+	@echo "  make build OS=windows - Cross-compile for Windows"
+	@echo "  make build-static     - Static Linux binary"
+	@echo "  make build-debug      - Debug build"
+	@echo "  make clean            - Remove built files"
